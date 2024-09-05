@@ -3,7 +3,74 @@ import { AiOutlineEdit } from "react-icons/ai";
 import "../style.css"
 import { Context } from "../App"
 
+
+function AddNewItem({currVal, setCurrVal, categories, closeAddItem, addItem}) {
+    return (
+        <>  
+            
+            <form>
+            <div id="editOverlay" style={styles.overlay}></div>
+            <div id="addItemBox" style={styles.addItemBox}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>Category: </p>
+                    <input type="text" list="category" style={styles.input} defaultValue={currVal.category} autoComplete="true" required  onChange={(e) => {setCurrVal((prev) => ({...prev, category: (e.target.value).toString()}))}}/>
+                    <datalist id="category" >
+                        {categories?.map((i) =>
+                            <option value={i}>{i}</option>
+                        )}
+                    </datalist>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>name: </p>
+                    <input type="text" defaultValue={currVal.name} placeholder="item-name" maxLength="30" style={styles.input} autoComplete="true" required onChange={(e) => {setCurrVal((prev) => ({...prev, name: (e.target.value).toString()}))}}/>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>mini_unit:</p>
+                    <input type="text" list="mini_unit" style={styles.input} defaultValue={currVal.mini_unit} autoComplete ="true" onChange={(e) => {setCurrVal((prev) => ({...prev, mini_unit: (e.target.value).toString()}))}}/>
+                    <datalist id="mini_unit" >
+                        <option value="cup" />
+                        <option value="carton">Carton</option>
+                        <option value="litre">Litre</option>
+                    </datalist>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>mini_price: </p>
+                    <input type="text" placeholder="digits" defaultValue={currVal.mini_price}  maxLength="30" pattern="^[0-9]+$" title="Requires digits only!" style={styles.input} onChange={(e) => {setCurrVal((prev) => ({...prev, mini_price: +(+e.target.value).toFixed(2)}))}}/>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>maxi_unit: </p>
+                    <input type="text" list="maxi_unit" defaultValue={currVal.maxi_unit} style={styles.input} required onChange={(e) => {setCurrVal((prev) => ({...prev, maxi_unit: (e.target.value).toString()}))}}/>
+                    <datalist id="maxi_unit" >
+                        <option value="cup" />
+                        <option value="carton">Carton</option>
+                        <option value="litre">Litre</option>
+                    </datalist>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                    <p style={{ minWidth: 84 }}>maxi_price: </p>
+                    <input type="text" placeholder="digits" defaultValue={currVal.maxi_price} maxLength="30" pattern="^[0-9]+$" title="Requires digits only!" style={styles.input} onChange={(e) => {setCurrVal((prev) => ({...prev, maxi_price: +(+e.target.value).toFixed(2)}))}}/>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
+                    <p style={{ minWidth: 84 }}>Item_image:</p>
+                    <input id="img" type="file" accept="image/*" required />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", paddingInlineEnd: 18, marginTop: "25%" }}>
+                    <input style={styles.button} type="reset" value="CANCEL" onClick={() => { setCurrVal({}); closeAddItem() }} />
+                    <input style={{ ...styles.button, backgroundColor: "green" }} type="submit" value="SAVE" onClick={(e) => {e.preventDefault(); addItem()}} />
+                    {/* <input style={{ ...styles.button, backgroundColor: "blue" }} value="SAVEu" onClick={() => { console.log(document.getElementById('img').files[0]) }} /> */}
+                    {/* <input style={{ ...styles.button, backgroundColor: "green" }} type="submit" value="SAVE" onClick={(event) => { event.preventDefault(); setCurrVal({}); fetchData()}} /> */}
+                </div>
+            </div>
+            </form> 
+            {/* remove form tag if no effect on required prop */}
+
+        </>
+    )
+}
+
 export default function Stock() {
+    const { textInput, url } = useContext(Context)
     const [data, setData] = useState([
         {
             id: "c1",
@@ -42,26 +109,74 @@ export default function Stock() {
             category: "cereal"
         }
     ])
+    const matchCheck = textInput.toUpperCase()
+    const [cate_gory, setCategory] = useState("all")
+    const [delOvelay, setDelOverlay] = useState(false)
+    const [currVal, setCurrVal] = useState({
+        name: "",
+        maxi_price: "",
+        maxi_unit: "",
+        mini_price: "",
+        mini_unit: "",
+        checkState: false,
+        initialState: false,
+        category: "",
+        // img: document.getElementById('img')?.files[0]
+    })
     const fetchData = async () => {
-        alert(document.cookie)
+        // alert(document.cookie)
         try {
             const food = await fetch(`${url}/admin/food`, {
-                headers: {
-                    // Authorization: "Bearer " + token,
-                },
+                // headers: {
+                //     Authorization: "Bearer " + token,
+                // },
                 method: "GET",
                 // credentials: "include"
             })
             const jsonresult = await food.json()
             setData(jsonresult)
-        } catch (err) { console.log("error while fetching!") }
+        } catch (err) { console.log(err, "error while fetching!") }
     }
+
+    const addItem = async() => {
+        const img = document.getElementById('img').files[0];
+        const formData = new FormData()
+        for (const i in currVal){
+            formData.append(i, currVal[i])
+        }
+        formData.set("img", img)
+        try{
+            const response = await fetch(`${url}/admin/add-item`, {
+                method: "PUT",
+                body: formData
+            })
+            const result = await response.json();
+            console.log(result)
+            if (result.status == true){
+                closeAddItem()
+                fetchData()
+            }
+        } catch(err) {alert("An error occured while saving")}
+    }
+    
+    const delData = async (_id) => {
+        const removal = await fetch(`${url}/admin/${_id}`, { method: "DELETE" })
+        const res = await removal.json()
+        if (res.status === true) {
+            displayData = data.filter(item => {
+                return item._id !== _id
+            })
+            setData(displayData)
+        } else {
+            alert("Error!")
+        }
+    }
+
+    let displayData;
     useEffect(() => {
         fetchData();
     }, [])
 
-    let displayData;
-    const { textInput, url } = useContext(Context)
     useEffect(() => {
         if (!data) {
             document.getElementById("overlay").style.display = "block"
@@ -70,20 +185,6 @@ export default function Stock() {
         }
 
     }, [data])
-    const matchCheck = textInput.toUpperCase()
-    const [cate_gory, setCategory] = useState("all")
-    const [delOvelay, setDelOverlay] = useState(false)
-    const [currVal, setCurrVal] = useState({
-        // id: "ann",
-        // name: "ann",
-        // maxi_price: "5",
-        // maxi_unit: "ann",
-        // mini_price: 5,
-        // mini_unit: "ann",
-        // checkState: false,
-        // initialState: false,
-        // category: "ann",
-    })
 
     const openAddItem = () => {
         document.getElementById("addItemBox").style.display = "block"
@@ -99,16 +200,6 @@ export default function Stock() {
     const getCategory = (event) => {
         setCategory(event.target.value)
         return (event.target.value)
-    }
-    const delData = async (_id) => {
-        const removal = await fetch(`${url}/admin/${_id}`, { method: "DELETE" })
-        const res = await removal.json()
-        if (res.status === true) {
-            displayData = data.filter(item => {
-                return item._id !== _id
-            })
-            setData(displayData)
-        }
     }
     const categories = [...new Set(data?.map(item => item.category))];
     categories?.map(i => {
@@ -162,66 +253,9 @@ export default function Stock() {
         )
     }
 
-
-    function AddNewItem() {
-        return (
-            <>
-                <div id="editOverlay" style={styles.overlay}></div>
-                <div id="addItemBox" style={styles.addItemBox}>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>Category: </p>
-                        <input type="text" id="yt" list="category" name="category" style={styles.input} defaultValue={currVal.category} autoComplete required />
-                        <datalist id="category" >
-                            {categories?.map((i) =>
-                                <option value={i}>{i}</option>
-                            )}
-                        </datalist>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>name: </p><input name="name" type="text" defaultValue={currVal.name} placeholder="item-name" maxLength="30" style={styles.input} autoComplete required />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>mini_unit: </p>
-                        <input type="text" list="mini_unit" name="mini_unit" style={styles.input} defaultValue={currVal.mini_unit} autoComplete />
-                        <datalist id="mini_unit" >
-                            <option value="cup" />
-                            <option value="carton">Carton</option>
-                            <option value="litre">Litre</option>
-                        </datalist>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>mini_price: </p><input name="mini_price" type="text" defaultValue={currVal.mini_price} placeholder="digits" maxLength="30" pattern="^[0-9]+$" title="Requires digits only!" style={styles.input} />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>maxi_unit: </p>
-                        <input type="text" list="maxi_unit" name="maxi_unit" defaultValue={currVal.maxi_unit} style={styles.input} required />
-                        <datalist id="maxi_unit" >
-                            <option value="cup" />
-                            <option value="carton">Carton</option>
-                            <option value="litre">Litre</option>
-                        </datalist>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-                        <p style={{ minWidth: 84 }}>maxi_price: </p><input name="maxi_price" type="text" placeholder="digits" defaultValue={currVal.mini_price} maxLength="30" pattern="^[0-9]+$" title="Requires digits only!" style={styles.input} />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
-                        <p style={{ minWidth: 84 }}>Item_image:</p>
-                        <input type="file" name="img" required />
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "flex-end", paddingInlineEnd: 18, marginTop: "25%" }}>
-                        <input style={styles.button} type="button" value="CANCEL" onClick={() => { setCurrVal({}); closeAddItem() }} />
-                        {/* <input style={{ ...styles.button, backgroundColor: "green" }} type="submit" value="SAVE" /> */}
-                        {/* <input style={{ ...styles.button, backgroundColor: "green" }} type="submit" value="SAVE" onClick={() => { setCurrVal({}) }} /> */}
-                        <input style={{ ...styles.button, backgroundColor: "green" }} type="submit" value="SAVE" onClick={(event) => { event.preventDefault(); setCurrVal({}); fetchData()}} />
-                    </div>
-                </div>
-            </>
-        )
-    }
     return (
         <>
-            <div id="overlay" style={styles.overlay}></div>
+            <div id="overlay" style={styles.overlay} onClick={() => document.getElementById("addItemBox").style.display="none"}></div>
             <div className="tt" style={{ width: "100%", display: "flex", flexDirection: "column" }}>
                 <nav style={styles.nav}>
                     <h3>Stock</h3>
@@ -295,9 +329,9 @@ export default function Stock() {
                         <div>Loading...</div>
                     </div>
                 }
-                <form action={`${url}/admin/add-item`} method="post" encType="multipart/form-data">
-                    <AddNewItem />
-                </form>
+                {/* <form action={`${url}/admin/add-item`} method="post" encType="multipart/form-data"> */}
+                    <AddNewItem currVal={currVal} setCurrVal={setCurrVal} categories={categories} closeAddItem={closeAddItem} addItem={addItem}/>
+                {/* </form> */}
             </div>
             <DelModal />
         </>
@@ -330,6 +364,7 @@ const styles = {
         border: "1px solid #eaefef",
         // outline: "none",
         backgroundColor: "white",
+        textTransform: "capitalize"
     },
     button: {
         width: 66,

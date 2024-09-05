@@ -11,7 +11,7 @@ import Stock from './pages/Stock'
 import Users from './pages/Users';
 
 // const url = "https://rutesobackend.onrender.com"
-const url = "http://172.24.80.1:27017"
+const url = "http://172.24.16.1:27017"
 
 export const Context = createContext({})
 export default function App({ route }) {
@@ -41,7 +41,7 @@ export default function App({ route }) {
       {navigator.onLine ? null : <ConnectionErr />}
       <div style={{ display: "flex" }}>
         <HashRouter>
-          <Context.Provider value={{ textInput: textInput, setInput: setInput, url }}>
+          <Context.Provider value={{ textInput: textInput, setInput: setInput, url: url }}>
             <Navbar setToggle={() => setToggle(!toggle)} />
             <Sidebar toggle={toggle} setToggle={() => { setToggle(!toggle); }} />
             <Routes>
